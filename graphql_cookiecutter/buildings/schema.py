@@ -33,23 +33,24 @@ class BuildingQuery(graphene.AbstractType):
             return Building.objects.filter(name__icontains=args.get('name'))
         return Building.objects.all()
 
-    def resolve_floors(self, args, context, info):
-        return Floor.objects.select_related('building').all()
-
-    def resolve_rooms(self, args, context, info):
-        return Room.objects.select_related('floor').all()
-
     def resolve_building(self, args, context, info):
         id = args.get('id')
         if id is not None:
             return Building.objects.get(pk=id)
         return None
 
+    def resolve_floors(self, args, context, info):
+        return Floor.objects.select_related('building').all()
+
     def resolve_floor(self, args, context, info):
         id = args.get('id')
         if id is not None:
             return Floor.objects.get(pk=id)
         return None
+
+    def resolve_rooms(self, args, context, info):
+        return Room.objects.select_related('floor').all()
+
 
 class Query(BuildingQuery, graphene.ObjectType):
     # This class will inherit from multiple Queries
