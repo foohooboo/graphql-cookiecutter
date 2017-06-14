@@ -30,7 +30,7 @@ class BuildingQuery(graphene.AbstractType):
 
     def resolve_buildings(self, args, context, info):
         if args.get('name'):
-            return Building.objects.filter(name__icontains=name)
+            return Building.objects.filter(name__icontains=args.get('name'))
         return Building.objects.all()
 
     def resolve_floors(self, args, context, info):
