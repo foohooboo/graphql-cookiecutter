@@ -49,19 +49,11 @@ class RoomNode(DjangoObjectType):
 
 class BuildingQuery(graphene.AbstractType):
     buildings = DjangoFilterConnectionField(BuildingNode)
-    # buildings = graphene.List(BuildingNode, name=graphene.String())
     floors = DjangoFilterConnectionField(FloorNode)
-    # floors = graphene.List(FloorNode)
     rooms = DjangoFilterConnectionField(RoomNode)
-    # rooms = graphene.List(RoomNode)
     building = graphene.Field(BuildingNode, id=graphene.Int())
     floor = graphene.Field(FloorNode, id=graphene.Int())
     room = graphene.Field(RoomNode, id=graphene.Int())
-
-    # def resolve_buildings(self, args, context, info):
-    #     if args.get('name'):
-    #         return Building.objects.filter(name__icontains=args.get('name'))
-    #     return Building.objects.all()
 
     def resolve_floors(self, args, context, info):
         return Floor.objects.select_related('building').all()
