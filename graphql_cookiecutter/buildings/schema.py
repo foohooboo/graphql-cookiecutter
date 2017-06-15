@@ -37,6 +37,24 @@ class CreateBuilding(graphene.Mutation):
         return CreateBuilding(building=building, ok=ok)
 
 
+class ModifyBuilding(graphene.Mutation):
+    class Input:
+        building_id = graphene.Int(required=True)
+        new_name = graphene.String(required=True)
+        #size = graphene.Int()
+
+    ok = graphene.Boolean()
+    building = graphene.Field(BuildingNode)
+
+    @staticmethod
+    def mutate(root, args, context, info):
+        building_to_modify = Building.objects.get(pk=args.get('building_id'))
+        building_to_modify.name = args.get('new_name')
+        #building_to_modify.size = args.get('size')
+        ok = True
+        return ModifyBuilding(building=building_to_modify, ok=ok)
+
+
 class FloorNode(DjangoObjectType):
     pk = graphene.Int()
 
@@ -77,32 +95,6 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_building = CreateBuilding.Field()
-
-
-class ModifyBuilding(graphene.Mutation):
-    class Input:
-        building_id = graphene.Int()
-        new_name = graphene.String()
-        #size = graphene.Int()
-
-    ok = graphene.Boolean()
-    building = graphene.Field(BuildingNode)
-
-    @staticmethod
-    def mutate(root, args, context, info):
-        building_to_modify = Building.objects.get(pk=args.get('building_id'))
-        building_to_modify.name = args.get('new_name')
-        #building_to_modify.size = args.get('size')
-        ok = True
-        return ModifyBuilding(building=building_to_modify, ok=ok)
-
-
-class Query(BuildingQuery, graphene.ObjectType):
-    # This class will inherit from multiple Queries
-    # as we begin to add more apps to our project
-    pass
-
-class Mutations(graphene.ObjectType):
     modify_building = ModifyBuilding.Field()
 
 
