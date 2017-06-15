@@ -3,7 +3,7 @@ from django.db import models
 class Building(models.Model):
     name = models.CharField(max_length=255)
     size = models.PositiveSmallIntegerField()
-    owner = models.ForeignKey('users.User', related_name='buildings', blank=True, null=True)
+    user = models.ForeignKey('users.User', related_name='buildings', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -16,6 +16,10 @@ class Floor(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.building.name, self.number)
 
+    @property
+    def user(self):
+        return self.building.user
+
 class Room(models.Model):
     floor = models.ForeignKey(Floor, related_name='rooms')
     size = models.PositiveSmallIntegerField()
@@ -23,3 +27,7 @@ class Room(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.floor, self.name)
+
+    @property
+    def user(self):
+        return self.floor.building.user

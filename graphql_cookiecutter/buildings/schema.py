@@ -7,7 +7,20 @@ from graphql_relay.node.node import from_global_id
 from .models import Building, Floor, Room
 
 
-class BuildingNode(DjangoObjectType):
+class UserOnlyMixin:
+    @classmethod
+    def get_node(cls, id, context, info):
+        try:
+            obj = cls._meta.model.objects.get(id=id)
+        except cls._meta.model.DoesNotExist:
+            return None
+
+        if context.user == obj.user:
+            return obj
+        return None
+
+
+class BuildingNode(UserOnlyMixin, DjangoObjectType):
     pk = graphene.Int()
 
     class Meta:
@@ -16,9 +29,6 @@ class BuildingNode(DjangoObjectType):
         filter_fields = {
             'name': ['icontains']
         }
-
-    def resolve_pk(self, args, context, info):
-        return self.id
 
 
 class CreateBuilding(graphene.Mutation):
@@ -31,12 +41,12 @@ class CreateBuilding(graphene.Mutation):
 
     @staticmethod
     def mutate(root, args, context, info):
-        building = Building.objects.create(name=args.get('name'), size=args.get('size'), owner=context.user)
+        building = Building.objects.create(name=args.get('name'), size=args.get('size'), user=context.user)
         ok = True
         return CreateBuilding(building=building, ok=ok)
 
 
-class FloorNode(DjangoObjectType):
+class FloorNode(UserOnlyMixin, DjangoObjectType):
     pk = graphene.Int()
 
     class Meta:
@@ -44,11 +54,8 @@ class FloorNode(DjangoObjectType):
         interfaces = (graphene.Node, )
         filter_fields = ['number']
 
-    def resolve_pk(self, args, context, info):
-        return self.id
 
-
-class RoomNode(DjangoObjectType):
+class RoomNode(UserOnlyMixin, DjangoObjectType):
     pk = graphene.Int()
 
     class Meta:
@@ -57,9 +64,6 @@ class RoomNode(DjangoObjectType):
         filter_fields = {
             'name': ['icontains']
         }
-
-    def resolve_pk(self, args, context, info):
-        return self.id
 
 
 class Query(graphene.ObjectType):
@@ -71,7 +75,13 @@ class Query(graphene.ObjectType):
     room = graphene.Node.Field(RoomNode)
 
     def resolve_buildings(self, args, context, info):
-        return Building.objects.filter(owner=context.user)
+        return Building.objects.filter(user=context.user)
+
+    def resolve_floors(self, args, context, info):
+        return Floor.objects.filter(building__user=context.user)
+
+    def resolve_rooms(self, args, context, info):
+        return Room.objects.filter(floor__building__user=context.user)
 
 
 class Mutation(graphene.ObjectType):
