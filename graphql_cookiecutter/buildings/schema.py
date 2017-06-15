@@ -27,7 +27,8 @@ class BuildingNode(UserOnlyMixin, DjangoObjectType):
         model = Building
         interfaces = (graphene.Node, )
         filter_fields = {
-            'name': ['icontains']
+            'name': ['icontains'],
+            'size': ['gte', 'lte']
         }
 
 
@@ -44,6 +45,24 @@ class CreateBuilding(graphene.Mutation):
         building = Building.objects.create(name=args.get('name'), size=args.get('size'), user=context.user)
         ok = True
         return CreateBuilding(building=building, ok=ok)
+
+
+class ModifyBuilding(graphene.Mutation):
+    class Input:
+        building_id = graphene.Int(required=True)
+        new_name = graphene.String(required=True)
+        #size = graphene.Int()
+
+    ok = graphene.Boolean()
+    building = graphene.Field(BuildingNode)
+
+    @staticmethod
+    def mutate(root, args, context, info):
+        building_to_modify = Building.objects.get(pk=args.get('building_id'))
+        building_to_modify.name = args.get('new_name')
+        #building_to_modify.size = args.get('size')
+        ok = True
+        return ModifyBuilding(building=building_to_modify, ok=ok)
 
 
 class FloorNode(UserOnlyMixin, DjangoObjectType):
@@ -86,6 +105,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_building = CreateBuilding.Field()
+    modify_building = ModifyBuilding.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
