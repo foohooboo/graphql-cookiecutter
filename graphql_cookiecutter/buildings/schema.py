@@ -18,8 +18,23 @@ class BuildingNode(DjangoObjectType):
             'size': ['gte', 'lte']
         }
 
-    def resolve_real_id(self, args, context, info):
+    def resolve_pk(self, args, context, info):
         return self.id
+
+
+class CreateBuilding(graphene.Mutation):
+    class Input:
+        name = graphene.String(required=True)
+        size = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    building = graphene.Field(BuildingNode)
+
+    @staticmethod
+    def mutate(root, args, context, info):
+        building = Building.objects.create(name=args.get('name'), size=args.get('size'), owner=context.user)
+        ok = True
+        return CreateBuilding(building=building, ok=ok)
 
 
 class FloorNode(DjangoObjectType):
@@ -30,7 +45,7 @@ class FloorNode(DjangoObjectType):
         interfaces = (graphene.Node, )
         filter_fields = ['number']
 
-    def resolve_real_id(self, args, context, info):
+    def resolve_pk(self, args, context, info):
         return self.id
 
 
@@ -44,35 +59,24 @@ class RoomNode(DjangoObjectType):
             'name': ['icontains']
         }
 
-    def resolve_real_id(self, args, context, info):
+    def resolve_pk(self, args, context, info):
         return self.id
 
 
-class BuildingQuery(graphene.AbstractType):
+class Query(graphene.ObjectType):
     buildings = DjangoFilterConnectionField(BuildingNode)
     floors = DjangoFilterConnectionField(FloorNode)
     rooms = DjangoFilterConnectionField(RoomNode)
-    building = graphene.Field(BuildingNode, id=graphene.Int())
-    floor = graphene.Field(FloorNode, id=graphene.Int())
-    room = graphene.Field(RoomNode, id=graphene.Int())
+    building = graphene.Node.Field(BuildingNode)
+    floor = graphene.Node.Field(FloorNode)
+    room = graphene.Node.Field(RoomNode)
 
-    def resolve_building(self, args, context, info):
-        id = args.get('id')
-        if id is not None:
-            return Building.objects.get(pk=id)
-        return None
+    def resolve_buildings(self, args, context, info):
+        return Building.objects.filter(owner=context.user)
 
-    def resolve_floors(self, args, context, info):
-        return Floor.objects.select_related('building').all()
 
-    def resolve_floor(self, args, context, info):
-        id = args.get('id')
-        if id is not None:
-            return Floor.objects.get(pk=id)
-        return None
-
-    def resolve_rooms(self, args, context, info):
-        return Room.objects.select_related('floor').all()
+class Mutation(graphene.ObjectType):
+    create_building = CreateBuilding.Field()
 
 
 class ModifyBuilding(graphene.Mutation):
@@ -102,4 +106,4 @@ class Mutations(graphene.ObjectType):
     modify_building = ModifyBuilding.Field()
 
 
-schema = graphene.Schema(query=Query, mutation=Mutations)
+schema = graphene.Schema(query=Query, mutation=Mutation)

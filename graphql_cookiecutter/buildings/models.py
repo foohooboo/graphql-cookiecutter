@@ -3,6 +3,7 @@ from django.db import models
 class Building(models.Model):
     name = models.CharField(max_length=255)
     size = models.PositiveSmallIntegerField()
+    owner = models.ForeignKey('users.User', related_name='buildings', blank=True, null=True)
 
     def __str__(self):
         return self.name
