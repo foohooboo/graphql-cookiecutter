@@ -8,13 +8,14 @@ from .models import Building, Floor, Room
 
 
 class BuildingNode(DjangoObjectType):
-    real_id = graphene.Int()
+    pk = graphene.Int()
 
     class Meta:
         model = Building
         interfaces = (graphene.Node, )
         filter_fields = {
-            'name': ['icontains']
+            'name': ['icontains'],
+            'size': ['gte', 'lte']
         }
 
     def resolve_real_id(self, args, context, info):
@@ -22,7 +23,7 @@ class BuildingNode(DjangoObjectType):
 
 
 class FloorNode(DjangoObjectType):
-    real_id = graphene.Int()
+    pk = graphene.Int()
 
     class Meta:
         model = Floor
@@ -34,7 +35,7 @@ class FloorNode(DjangoObjectType):
 
 
 class RoomNode(DjangoObjectType):
-    real_id = graphene.Int()
+    pk = graphene.Int()
 
     class Meta:
         model = Room
@@ -74,9 +75,31 @@ class BuildingQuery(graphene.AbstractType):
         return Room.objects.select_related('floor').all()
 
 
+class ModifyBuilding(graphene.Mutation):
+    class Input:
+        building_id = graphene.Int()
+        new_name = graphene.String()
+        #size = graphene.Int()
+
+    ok = graphene.Boolean()
+    building = graphene.Field(BuildingNode)
+
+    @staticmethod
+    def mutate(root, args, context, info):
+        building_to_modify = Building.objects.get(pk=args.get('building_id'))
+        building_to_modify.name = args.get('new_name')
+        #building_to_modify.size = args.get('size')
+        ok = True
+        return ModifyBuilding(building=building_to_modify, ok=ok)
+
+
 class Query(BuildingQuery, graphene.ObjectType):
     # This class will inherit from multiple Queries
     # as we begin to add more apps to our project
     pass
 
-schema = graphene.Schema(query=Query)
+class Mutations(graphene.ObjectType):
+    modify_building = ModifyBuilding.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutations)
