@@ -31,7 +31,7 @@ class CreateBuilding(graphene.Mutation):
 
     @staticmethod
     def mutate(root, args, context, info):
-        building = Building.objects.create(name=args.get('name'), size=args.get('size'))
+        building = Building.objects.create(name=args.get('name'), size=args.get('size'), owner=context.user)
         ok = True
         return CreateBuilding(building=building, ok=ok)
 
@@ -69,6 +69,9 @@ class Query(graphene.ObjectType):
     building = graphene.Node.Field(BuildingNode)
     floor = graphene.Node.Field(FloorNode)
     room = graphene.Node.Field(RoomNode)
+
+    def resolve_buildings(self, args, context, info):
+        return Building.objects.filter(owner=context.user)
 
 
 class Mutation(graphene.ObjectType):
