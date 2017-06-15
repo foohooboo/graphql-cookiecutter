@@ -68,6 +68,19 @@ class ModifyBuilding(graphene.Mutation):
         return ModifyBuilding(building=building_to_modify, ok=ok)
 
 
+class DeleteBuilding(graphene.Mutation):
+    class Input:
+        building_id = graphene.Int()
+
+    ok = graphene.Boolean()
+
+    @staticmethod
+    def mutate(root, args, context, info):
+        Building.objects.get(pk=args.get('building_id')).delete()
+        ok = True
+        return DeleteBuilding(ok=ok)
+
+
 class FloorNode(UserOnlyMixin, DjangoObjectType):
     pk = graphene.Int()
 
@@ -109,6 +122,7 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     create_building = CreateBuilding.Field()
     modify_building = ModifyBuilding.Field()
+    delete_building = DeleteBuilding.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
