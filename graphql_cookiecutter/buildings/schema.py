@@ -42,7 +42,9 @@ class CreateBuilding(graphene.Mutation):
 
     @staticmethod
     def mutate(root, args, context, info):
-        building = Building.objects.create(name=args.get('name'), size=args.get('size'), user=context.user)
+        building = Building.objects.create(name=args.get('name'),
+                                           size=args.get('size'),
+                                           user=context.user)
         ok = True
         return CreateBuilding(building=building, ok=ok)
 
@@ -60,6 +62,7 @@ class ModifyBuilding(graphene.Mutation):
     def mutate(root, args, context, info):
         building_to_modify = Building.objects.get(pk=args.get('building_id'))
         building_to_modify.name = args.get('new_name')
+        building_to_modify.save()
         #building_to_modify.size = args.get('size')
         ok = True
         return ModifyBuilding(building=building_to_modify, ok=ok)
